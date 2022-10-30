@@ -12,7 +12,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var resultTextView: TextView
 
     //მოქმედებების შესრულების შესაძლებლობა
-    private var opAllow = true
+    private var opAllow = false
 
     //წერტილის დაწერის შესაძლებლობა
     private var decimalAllow = true
@@ -59,8 +59,8 @@ class MainActivity : AppCompatActivity() {
     fun onClickOperator(view: View) {
         //ვამოწმებთ არის თუ არა ტექსტვიუ
         if (view is TextView) {
-            //თუ უარყოფითი რიცხვით გვინდა დაწყება
-            if (resultTextView.text.toString() == "0" && view.text.equals("-")) {
+            //თუ უარყოფითი რიცხვით გვინდა დაწყება ან წერტილის შემდეგ პირდაპირ ვწერთ ოპერატორს
+            if (resultTextView.text.toString() == "0" && view.text.equals("-") || resultTextView.text.last().toString() == ".") {
                 resultTextView.text = resultTextView.text.dropLast(1)
                 resultTextView.append((view.text))
                 opAllow = false
