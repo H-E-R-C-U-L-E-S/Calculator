@@ -1,22 +1,13 @@
 package com.example.calculator
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-
 import android.view.View
 import android.widget.TextView
-
+import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
-
+    //ვიუ
     private lateinit var resultTextView: TextView
-
-    //მოქმედებების შესრულების შესაძლებლობა
-    private var opAllow = false
-
-    //წერტილის დაწერის შესაძლებლობა
-    private var decimalAllow = true
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,17 +21,16 @@ class MainActivity : AppCompatActivity() {
     fun onClickNumber(view: View) {
         //ვამოწმებთ არის თუ არა ტექსტვიუ
         if (view is TextView) {
-            //თუ წერტილს დაკლიკეს
+            //თუ წერტილს დააკლიკეს
             if (view.text == ".") {
                 //ვამოწმებთ წერტილი დაწერილი ხომ არ არის
-                if (decimalAllow) {
+                if (dotAllowed()) {
                     //თუ ოპერატორის შემდეგ პირდაპირ წერტილს ვწერთ ჩავამატოთ ნული წერტილის წინ
-                    if (!resultTextView.text.last().isDigit()){
+                    if (!resultTextView.text.last().isDigit()) {
                         resultTextView.append("0")
                     }
-                    //თუ არ არის ვწერთ წერტილს და ვაახლებთ ბულიენის მნიშვნელობას
+                    //ვწერთ წერტილს
                     resultTextView.append(view.text)
-                    decimalAllow = false
                 }
 
             } else {
@@ -50,8 +40,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 //ტექსტვიუში ვამატებთ ახალ ციფრს
                 resultTextView.append(view.text)
-                // ბულიენს ვცვლით რაც სშუალებას გვაძლევს მოქმედებები შევასრულოთ(+,-,*,/)
-                opAllow = true
             }
         }
     }
@@ -59,18 +47,17 @@ class MainActivity : AppCompatActivity() {
     fun onClickOperator(view: View) {
         //ვამოწმებთ არის თუ არა ტექსტვიუ
         if (view is TextView) {
-            //თუ უარყოფითი რიცხვით გვინდა დაწყება ან წერტილის შემდეგ პირდაპირ ვწერთ ოპერატორს
-            if (resultTextView.text.toString() == "0" && view.text.equals("-") || resultTextView.text.last().toString() == ".") {
-                resultTextView.text = resultTextView.text.dropLast(1)
-                resultTextView.append((view.text))
-                opAllow = false
-            }
-            //ვამოწმებთ შეგვიძლია თუ არა მოქმედებების შესრულება
-            else if (opAllow) {
-                //თუ შეგვიძლია მაშინ ოპერატორს ვუთითებთ ტექსტვიუში და ბულიენებს ვაახლებთ
+            //ბოლო ჩარაქთერი თუ რიცხვია ან  წერტილი მაშინ ოპერატორის დაწერა პირდაპირ შეგვიძლია
+            if (resultTextView.text.last().isDigit() || resultTextView.text.last()
+                    .toString() == "."
+            ) {
+                //თუ წერტილის მერე ვწერთ ოპერატორს ან რეზალთვიუზე საწყისი ნულია მაშინ ვაგდებთ ბოლო ჩარაქთერს
+                if (resultTextView.text.last()
+                        .toString() == "." || view.text.toString() == "-" && resultTextView.text.toString() == "0"
+                ) {
+                    resultTextView.text = resultTextView.text.dropLast(1)
+                }
                 resultTextView.append(view.text)
-                opAllow = false
-                decimalAllow = true
             } else {
                 if (resultTextView.text.length > 1) {
                     //თუ ოპერატორი უკვე წერია ვშლით და ვუთითებთ ახალ ოპერატორს
@@ -86,23 +73,17 @@ class MainActivity : AppCompatActivity() {
         if (view is TextView) {
             //ვაყენებთ საწყის მნიშვნელობებზე
             resultTextView.text = "0"
-            opAllow = true
-            decimalAllow = true
         }
     }
 
     fun onClickDelete(view: View) {
         //ვამოწმებთ არის თუ არა ტექსტვიუ
         if (view is TextView) {
-            //თუ 1 ციფრიღაა დარჩენილი ვუშვებთ გასუფთავების ფუნქციას
-            if (resultTextView.text.length == 1) {
-                onClickClear(view)
-            } else {
-                //თუ არადა ბოლო ციფრს ან ოპერატორს ვშლით
-                if (!resultTextView.text.last().isDigit()) {
-                    opAllow = true
-                }
+            //სანამ 1-ზე მეტი ჩარაქთერი გვაქვს ბოლოდან ვაგდებთ ერთს, როცა 1 გვრჩება ვაყენებთ საწყის მნიშვნელობაზე
+            if (resultTextView.text.length > 1) {
                 resultTextView.text = resultTextView.text.dropLast(1)
+            } else {
+                onClickClear(view)
             }
         }
     }
@@ -115,6 +96,16 @@ class MainActivity : AppCompatActivity() {
                 resultTextView.text = calculateResults()
             }
         }
+    }
+
+    private fun dotAllowed(): Boolean {
+        //სთრინგს უკნიდან მოვყვებით და ვამოწმებთ ოპერატორამდე თუ წერტილია დაწერილი ვაბრუნებთ false-ს თუ არ არის ვაბრუნებთ true-ს
+        resultTextView.text.toString().reversed().forEach {
+            if (!it.isDigit()) {
+                return it.toString() != "."
+            }
+        }
+        return true
     }
 
     private fun calculateResults(): String {
@@ -131,6 +122,60 @@ class MainActivity : AppCompatActivity() {
         //double გადავაქციოთ ბიგდეციმალად და  ზედმეტი 0 ების მოსაშორებლად ვუხმოთ ფუნქციას stripTrailingZeros
         //შემდეგ კი აუცილებლად  toPlainString ფუნქციით გადავაქციოთ სთრინგად და არა toString -ით
         return result.toBigDecimal().stripTrailingZeros().toPlainString()
+    }
+
+    private fun numOperators(): MutableList<Any> {
+        //ვქმნით მუთეიბლ სიას "Any" პარამეტრით რომელსაც შეგვიძლია დავამატოთ და ამოვაკლოთ ნებისმიერი სახის  ობიექტი
+        val list = mutableListOf<Any>()
+
+        //მიმდინარე ციფრი
+        var currentNum = ""
+
+        //თვლა
+        var i = 0
+
+        //თექსთვიუს ყველა ჩარაქთერისთვის სათითაოდ გაეშვება ფუნქცია
+        for (character in resultTextView.text) {
+            //თუ ჩარაქთერი ან რიცხვია ან წერტილი აღიქმება ერთ რიცხვად სანამ არ მივალთ ოპერატორამდე
+            if (character.isDigit() || character == '.') currentNum += character
+            else {
+                //თუ მინუსით იწყება რიცხვი ოპერატორის ნაცვალად აღიქვამს რიცხვის ნიშნად
+                //ვამოწმებთ პირველი ჩარაქთერი არის თუ არა -
+                if (i == 0 && character.toString() == "-") {
+                    currentNum += character
+                } else {
+                    //სიაში ვამატებთ "შეკრულ" რიცხვს როგორც double
+                    list.add(currentNum.toDouble())
+                    //მიმდინარე რიცხვს ვაბრუნბთ საწყის მნიშვნელობაზე
+                    currentNum = ""
+                    //სიაში ვამატებთ ოპერატორს
+                    list.add(character)
+                }
+            }
+            i++
+        }
+
+        //როდესაც for ლუპი ბოლოში გავა მასში ჩაწერილი ფუნქცია მეტჯერ აღარ გაეშვება რადგან  მეტი ჩარაქთერი აღარაა და შესაბამისად ოპერატორამდეც ვერ მივა
+        // შესაბამისად ბოლო რიცხვი რომელსაც შეადგენს არ დაემატება სიაში რადგან ლოგიკა აწყობილია ოპერატორამდე მისვლაზე
+        //ამიტომ ლუპის გარეთ უნდა დავამატოთ ბოლო "შეკრული" რიცხვი
+        if (currentNum != "") {
+            list.add(currentNum.toDouble())
+        }
+
+        //ვაბრუნებთ სიას რომელიც შეცავს "შეკრულ" რიცხვებს და ოპერატორებს
+        //ამრიგად ჩვენ უკვე ვიცით რომელი რიცხვებს შორის რომელი ოპერატორია
+        return list
+    }
+
+    private fun timesDivisionCalculate(passedList: MutableList<Any>): MutableList<Any> {
+        //ჩაწოდებული სია
+        var list = passedList
+        //ვიდრე ჩაწოდებული სია შეიცავს გამრავლების და გაყოფის ოპერატორებს ის ასრულებს ქმედებებს
+        while (list.contains('*') || list.contains('/')) {
+            list = calcTimesDiv(list)
+        }
+        //აბრუნებს სიას
+        return list
     }
 
     private fun addSubtractCalculate(passedList: MutableList<Any>): Double {
@@ -152,17 +197,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         return result
-    }
-
-    private fun timesDivisionCalculate(passedList: MutableList<Any>): MutableList<Any> {
-        //ჩაწოდებული სია
-        var list = passedList
-        //ვიდრე ჩაწოდებული სია შეიცავს გამრავლების და გაყოფის ოპერატორებს ის ასრულებს ქმედებებს
-        while (list.contains('*') || list.contains('/')) {
-            list = calcTimesDiv(list)
-        }
-        //აბრუნებს სიას
-        return list
     }
 
     private fun calcTimesDiv(passedList: MutableList<Any>): MutableList<Any> {
@@ -214,60 +248,4 @@ class MainActivity : AppCompatActivity() {
         return newList
     }
 
-    private fun numOperators(): MutableList<Any> {
-        //ვქმნით მუთეიბლ სიას "Any" პარამეტრით რომელსაც შეგვიძლია დავამატოთ და ამოვაკლოთ ნებისმიერი სახის  ობიექტი
-        val list = mutableListOf<Any>()
-        //მიმდინარე ციფრი
-        var currentNum = ""
-
-        //თვლა
-        var i = 0
-
-        //თექსთვიუს ყველა ჩარაქთერისთვის სათითაოდ გაეშვება ფუნქცია
-        for (character in resultTextView.text) {
-            //თუ ჩარაქთერი ან რიცხვია ან წერტილი აღიქმება ერთ რიცხვად სანამ არ მივალთ ოპერატორამდე
-            if (character.isDigit() || character == '.') currentNum += character
-            else {
-                //თუ მინუსით იწყება რიცხვი ოპერატორის ნაცვალად აღიქვამს რიცხვის ნიშნად
-                //ვამოწმებთ პირველი ჩარაქთერი არის თუ არა -
-                if (i == 0 && character.toString() == "-") {
-                    currentNum += character
-                } else {
-                    //სიაში ვამატებთ "შეკრულ" რიცხვს როგორც double
-                    list.add(currentNum.toDouble())
-                    //მიმდინარე რიცხვს ვაბრუნბთ საწყის მნიშვნელობაზე
-                    currentNum = ""
-                    //სიაში ვამატებთ ოპერატორს
-                    list.add(character)
-                }
-            }
-            i++
-        }
-
-        //როდესაც for ლუპი ბოლოში გავა მასში ჩაწერილი ფუნქცია მეტჯერ აღარ გაეშვება რადგან  მეტი ჩარაქთერი აღარაა და შესაბამისად ოპერატორამდეც ვერ მივა
-        // შესაბამისად ბოლო რიცხვი რომელსაც შეადგენს არ დაემატება სიაში რადგან ლოგიკა აწყობილია ოპერატორამდე მისვლაზე
-        //ამიტომ ლუპის გარეთ უნდა დავამატოთ ბოლო "შეკრული" რიცხვი
-        if (currentNum != "") {
-            list.add(currentNum.toDouble())
-        }
-
-        //ვაბრუნებთ სიას რომელიც შეცავს "შეკრულ" რიცხვებს და ოპერატორებს
-        //ამრიგად ჩვენ უკვე ვიცით რომელი რიცხვებს შორის რომელი ოპერატორია
-        return list
-    }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
